@@ -5,7 +5,6 @@ const License = require('../models/License');
 
 const router = express.Router();
 
-// Helper Function: Generates a beautiful key like "SEO-PRO-A1B2-C3D4-E5F6"
 function generateRandomKey() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let key = 'SEO-PRO-';
@@ -28,15 +27,13 @@ router.post('/generate', async (req, res) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Verify the requester is actually an admin
     const currentUser = await User.findById(decoded.id);
     if (!currentUser || currentUser.role !== 'admin') {
-      return res.status(403).json({ message: "Access denied. Admins only." });
+      return res.status(403).json({ message: "Access denied" });
     }
 
     const { userEmail, plan, siteLimit } = req.body;
 
-    // Create the license
     const newLicense = new License({
       key: generateRandomKey(),
       userEmail,
@@ -65,7 +62,7 @@ router.get('/all', async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const licenses = await License.find({});
+    const licenses = await License.find({}).lean();
     res.json(licenses);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch licenses" });
@@ -86,6 +83,45 @@ router.put('/toggle-status', async (req, res) => {
     res.json(updated);
   } catch (error) {
     res.status(500).json({ message: "Failed to update license status" });
+  }
+});
+
+// 4. FETCH CURRENT LOGGED-IN USER'S LICENSES (USER PORTAL - NEW!)
+router.get('/my-licenses', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: "No token provided" });
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Find the logged-in user
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) return res.status(404).json({ message: "User not found" });
+
+    // Find only the licenses owned by this user's email
+    const licenses = await License.find({ userEmail: currentUser.email }).lean();
+    res.json(licenses);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch your licenses" });
+  }
+});
+
+// 5. DEACTIVATE DOMAIN (USER SELF-SERVICE)
+router.put('/deactivate-domain', async (req, res) => {
+  try {
+    const { licenseId, domain } = req.body;
+
+    // Pulls (removes) the specific domain from the activatedSites array
+    const updatedLicense = await License.findByIdAndUpdate(
+      licenseId,
+      { $pull: { activatedSites: domain } },
+      { new: true }
+    );
+
+    res.json(updatedLicense);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to deactivate domain" });
   }
 });
 

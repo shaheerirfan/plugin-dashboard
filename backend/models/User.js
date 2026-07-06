@@ -13,7 +13,7 @@ const UserSchema = new mongoose.Schema({
     default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
   },
   
-  // THIS IS THE DATABASE CODE WE MUST ADD!
+  // THIS IS THE DATABASE CODE
   role: { type: String, default: "user" } 
 }, { timestamps: true });
 

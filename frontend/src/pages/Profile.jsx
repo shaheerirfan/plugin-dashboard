@@ -1,40 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, AtSign, Camera } from 'lucide-react';
 
-export default function Profile() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function Profile({ user, setUser }) { // Receives user details
   const [formData, setFormData] = useState({ name: '', username: '', profilePic: '', phone: '' });
 
+  // Instantly pre-fills form data from App state
   useEffect(() => {
-    const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await fetch('http://localhost:5000/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-          setFormData({
-            name: data.name || '',
-            username: data.username || '',
-            profilePic: data.profilePic || '',
-            phone: data.phone || ''
-          });
-        }
-      } catch (err) {
-        console.error("Error loading profile:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        username: user.username || '',
+        profilePic: user.profilePic || '',
+        phone: user.phone || ''
+      });
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -64,7 +44,7 @@ export default function Profile() {
       
       const updatedData = await response.json();
       if (response.ok) {
-        setUser(updatedData);
+        setUser(updatedData); // Updates the global App state!
         alert("Profile updated successfully!");
       } else {
         alert("Failed to update profile");
@@ -74,21 +54,26 @@ export default function Profile() {
     }
   };
 
-  if (loading) return <div className="p-8">Loading profile...</div>;
-  if (!user) return <div className="p-8">Please login to view profile.</div>;
+  if (!user) {
+    return (
+      <div className="p-8 text-center dark:text-white">
+        <h2 className="text-2xl font-bold mb-4">Please Login to view your profile</h2>
+        <a href="/login" className="text-blue-600 font-bold underline">Go to Login</a>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 w-full max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-800 mb-8">My Profile</h2>
+      <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">My Profile</h2>
       
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-        {/* Profile Picture Section */}
-        <div className="flex items-center space-x-6 mb-8 border-b border-gray-100 pb-8">
+      <div className="bg-white dark:bg-slate-800/80 p-8 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800">
+        <div className="flex items-center space-x-6 mb-8 border-b border-gray-100 dark:border-slate-700 pb-8">
           <div className="relative">
             <img 
               src={formData.profilePic || `https://ui-avatars.com/api/?name=${formData.name || 'User'}&background=2563eb&color=fff`} 
               alt="Profile" 
-              className="w-24 h-24 rounded-full object-cover border-4 border-blue-50 cursor-pointer"
+              className="w-24 h-24 rounded-full object-cover border-4 border-blue-50 dark:border-slate-700 cursor-pointer"
               onClick={() => document.getElementById('fileInput').click()}
             />
             <input id="fileInput" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -101,29 +86,28 @@ export default function Profile() {
             </button>
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-800">{formData.name}</h3>
-            <p className="text-gray-500 text-sm">Click photo to change.</p>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white">{formData.name}</h3>
+            <p className="text-gray-500 dark:text-slate-400 text-sm">Click photo to change.</p>
           </div>
         </div>
 
-        {/* Profile Form */}
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-              <input name="name" type="text" value={formData.name} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Full Name</label>
+              <input name="name" type="text" value={formData.name} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-800 dark:text-white outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
-              <input name="username" type="text" value={formData.username} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Username</label>
+              <input name="username" type="text" value={formData.username} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-800 dark:text-white outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-              <input disabled type="email" value={user.email} className="w-full p-3 border border-gray-100 bg-gray-50 rounded-lg text-gray-500" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Email Address</label>
+              <input disabled type="email" value={user.email} className="w-full p-3 border border-gray-100 bg-gray-50 dark:bg-slate-950 rounded-lg text-gray-400 dark:text-slate-600" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-              <input name="phone" type="text" value={formData.phone} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Phone Number</label>
+              <input name="phone" type="text" value={formData.phone} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-800 dark:text-white outline-none" />
             </div>
           </div>
           <div className="flex justify-end pt-4">

@@ -7,10 +7,8 @@ mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('Connected to database, updating account...');
     
-    // Your exact email from the screenshot
     const targetEmail = 'shaheerirfan@encodersstudio.com'; 
 
-    // This updates your role to "admin" and deletes the broken field we made earlier!
     const updatedUser = await User.findOneAndUpdate(
       { email: targetEmail },
       { 
